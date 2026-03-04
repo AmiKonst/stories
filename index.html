@@ -12,13 +12,10 @@ html, body {
     height: 100%;
     background: #000;
     overflow: hidden;
-    font-family: Arial, sans-serif;
 }
 
-video#video {
+video {
     position: fixed;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -27,32 +24,26 @@ video#video {
 .controls {
     position: fixed;
     bottom: 30px;
+    right: 100px;
     display: flex;
     gap: 20px;
-    z-index: 10;
     background: #000;
     padding: 12px;
     border-radius: 12px;
-    right: 100px;
 }
 
 button {
     padding: 12px 24px;
     font-size: 16px;
     border: none;
-    cursor: pointer;
     border-radius: 6px;
-    background: rgba(255,255,255,0.85);
+    cursor: pointer;
 }
 </style>
 </head>
 <body>
 
-<!-- Основное видео -->
 <video id="video" loop playsinline></video>
-
-<!-- Скрытый video для аудио -->
-<video id="audioVideo" loop playsinline style="display:none"></video>
 
 <div class="controls">
     <button id="startBtn">Начать</button>
@@ -112,10 +103,42 @@ const videosPath = '/stories/videos/';
 const audioPath = '/stories/music/';
 
 const videoEl = document.getElementById('video');
-const audioVideoEl = document.getElementById('audioVideo');
 
-audioVideoEl.muted = false;
-audioVideoEl.volume = 1;
+/* ------------------ WebAudio ------------------ */
+
+let audioContext;
+let currentSource = null;
+let currentBuffer = null;
+
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+async function playAudio(file) {
+    if (!audioContext) return;
+
+    // Остановить предыдущий трек
+    if (currentSource) {
+        currentSource.stop();
+        currentSource.disconnect();
+    }
+
+    const response = await fetch(audioPath + file);
+    const arrayBuffer = await response.arrayBuffer();
+    currentBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = currentBuffer;
+    source.loop = true;
+    source.connect(audioContext.destination);
+    source.start(0);
+
+    currentSource = source;
+}
+
+/* ------------------ Логика шагов ------------------ */
 
 function loadStep(index) {
     if (index < 0 || index >= steps.length) return;
@@ -123,7 +146,7 @@ function loadStep(index) {
     step = index;
     const current = steps[step];
 
-    // --- Меняем только видео ---
+    // Видео
     videoEl.src = videosPath + current.video;
     videoEl.load();
 
@@ -132,16 +155,18 @@ function loadStep(index) {
         videoEl.play().catch(() => {});
     };
 
-    // --- Меняем аудио ТОЛЬКО если указано ---
+    // Аудио только если указано
     if (current.audio) {
-        audioVideoEl.src = audioPath + current.audio;
-        audioVideoEl.load();
-        audioVideoEl.play().catch(() => {});
+        playAudio(current.audio);
     }
 }
 
-document.getElementById('startBtn').addEventListener('click', () => {
+/* ------------------ Кнопки ------------------ */
+
+document.getElementById('startBtn').addEventListener('click', async () => {
     if (step === -1) {
+        initAudio();
+        await audioContext.resume(); // обязательно для LG
         loadStep(0);
     }
 });
@@ -158,8 +183,11 @@ document.getElementById('prevBtn').addEventListener('click', () => {
     }
 });
 
-document.addEventListener('keydown', (e) => {
+// Поддержка кнопки OK
+document.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter' && step === -1) {
+        initAudio();
+        await audioContext.resume();
         loadStep(0);
     }
 });
