@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steps Player</title>
+
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+    }
+
+    video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+/*        z-index: -1;*/
+    }
+
+    .controls {
+        position: fixed;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+        z-index: 10;
+    }
+
+    button {
+        padding: 12px 24px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: 6px;
+        background: rgba(255,255,255,0.85);
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: white;
+    }
+</style>
+</head>
+<body>
+
+<video id="video" loop playsinline></video>
+<audio id="audio" loop></audio>
+
+<div class="controls">
+    <button id="startBtn">Начать</button>
+    <button id="prevBtn">Назад</button>
+    <button id="nextBtn">Вперед</button>
+</div>
+
+<script>
+const steps = [
+    { video: '1-00.mp4', audio: 'light-01.mp3' },
+    { video: '1-00-01.mp4', audio: 'dark-01.mp3' },
+    { video: '1-00-02.mp4' },
+    { video: '1-01.mp4' },
+    { video: '1-02.mp4' },
+    { video: '1-03.mp4' },
+    { video: '1-03-01.mp4' },
+    { video: '1-04.mp4' },
+    { video: '1-04-01.mp4' },
+    { video: '1-05-01.mp4', audio: 'dark-02.mp3' },
+    { video: '1-05.mp4' },
+    { video: '1-05-02.mp4' },
+    { video: '1-05-03.mp4', audio: 'light-03.mp3' },
+    { video: '1-07.mp4' },
+    { video: '1-06.mp4' },
+    { video: '2-00.mp4', audio: 'dark-01.mp3' },
+    { video: '2-01.mp4' },
+    { video: '2-02.mp4' },
+    { video: '2-02-01.mp4' },
+    { video: '2-02-02.mp4' },
+    { video: '2-03.mp4' },
+    { video: '2-03-02.mp4' },
+    { video: '2-03-01.mp4' },
+    { video: '2-04.mp4' },
+    { video: '2-05.mp4' },
+    { video: '2-06.mp4' },
+    { video: '2-06-01.mp4' },
+    { video: '2-06-02.mp4' },
+    { video: '2-06-03.mp4' },
+    { video: '2-06-04.mp4' },
+    { video: '2-07.mp4' },
+    { video: '2-07-1.mp4' },
+    { video: '2-07-02.mp4' },
+    { video: '2-07-03.mp4' },
+    { video: '2-09-02-01.mp4', audio: 'dark-04.mp3' },
+    { video: '2-09.mp4' },
+    { video: '2-09-01.mp4', audio: 'light-04.mp3' },
+    { video: '2-09-02.mp4' },
+    { video: '2-09-02-02.mp4' },
+    { video: '2-09-03.mp4' },
+    { video: '2-09-04.mp4' },
+    { video: '3-06.mp4', audio: 'light-02.mp3' }
+];
+
+let step = -1;
+const videosPath = '/stories/videos/';
+const audioPath = '/stories/music/';
+
+const videoEl = document.getElementById('video');
+const audioEl = document.getElementById('audio');
+
+videoEl.playbackRate = 0.2;
+
+function loadStep(index) {
+    if (index < 0 || index >= steps.length) return;
+
+    step = index;
+    const current = steps[step];
+
+    // Видео
+    videoEl.src = videosPath + current.video;
+
+    videoEl.onloadedmetadata = () => {
+        videoEl.playbackRate = 0.5;   // <-- ВАЖНО: ставим скорость здесь
+        videoEl.play().catch(() => {});
+    };
+
+    videoEl.load();
+
+    // Аудио (меняется только если указано)
+    if (current.audio) {
+        audioEl.src = audioPath + current.audio;
+        audioEl.load();
+        audioEl.play().catch(() => {});
+    }
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    if (step === -1) {
+        loadStep(0);
+    }
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (step < steps.length - 1) {
+        loadStep(step + 1);
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (step > 0) {
+        loadStep(step - 1);
+    }
+});
+</script>
+
+</body>
+</html>
